@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/string.h"
 #include "common/log/log.h"
 #include <sstream>
+#include "value.h"
 
 const char *ATTR_TYPE_NAME[] = {"undefined", "chars", "ints", "floats", "booleans"};
 
@@ -119,6 +120,14 @@ void Value::set_value(const Value &value)
     } break;
   }
 }
+// value.cpp
+void Value::set_date(int val) {
+  attr_type_             = DATES;
+  num_value_.bool_value_ = val;
+  length_                = sizeof(val);
+}
+
+
 
 const char *Value::data() const
 {
@@ -148,6 +157,9 @@ std::string Value::to_string() const
     case CHARS: {
       os << str_value_;
     } break;
+    case DATES:{
+      os << num_value_.int_value_;
+    }
     default: {
       LOG_WARN("unsupported attr type: %d", attr_type_);
     } break;
@@ -173,6 +185,13 @@ int Value::compare(const Value &other) const
       } break;
       case BOOLEANS: {
         return common::compare_int((void *)&this->num_value_.bool_value_, (void *)&other.num_value_.bool_value_);
+      }
+      case DATES:{
+        if (date_value_ != nullptr && v.date_value_ != nullptr) {
+        if (date_value_ < v.date_value_) return -1;
+        if (date_value_ > v.date_value_) return 1;
+        return 0;
+      }
       }
       default: {
         LOG_WARN("unsupported type: %d", this->attr_type_);
@@ -209,6 +228,39 @@ int Value::get_int() const
     case BOOLEANS: {
       return (int)(num_value_.bool_value_);
     }
+    case DATES :{
+      return (int)(num_value_.bool_value_);
+    }
+    default: {
+      LOG_WARN("unknown data type. type=%d", attr_type_);
+      return 0;
+    }
+  }
+  return 0;
+}
+int Value::get_date() const
+{
+  switch (attr_type_) {
+    case CHARS: {
+      try {
+        return (int)(std::stol(str_value_));
+      } catch (std::exception const &ex) {
+        LOG_TRACE("failed to convert string to number. s=%s, ex=%s", str_value_.c_str(), ex.what());
+        return 0;
+      }
+    }
+    case INTS: {
+      return num_value_.int_value_;
+    }
+    case FLOATS: {
+      return (int)(num_value_.float_value_);
+    }
+    case BOOLEANS: {
+      return (int)(num_value_.bool_value_);
+    }
+    case DATES: { // 假设DATES是date类型的枚举值
+      return num_value_.date_value_;
+    }
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
       return 0;
@@ -237,6 +289,9 @@ float Value::get_float() const
     case BOOLEANS: {
       return float(num_value_.bool_value_);
     } break;
+      case DATES :{
+      return float(num_value_.bool_value_);
+    }
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
       return 0;
@@ -277,6 +332,9 @@ bool Value::get_boolean() const
     } break;
     case BOOLEANS: {
       return num_value_.bool_value_;
+    } break;
+        case DATES: { // 假设DATES是date类型的枚举值
+      return num_value_.date_value_ != 0;
     } break;
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
