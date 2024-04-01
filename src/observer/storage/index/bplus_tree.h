@@ -72,6 +72,20 @@ public:
       case CHARS: {
         return common::compare_string((void *)v1, attr_length_, (void *)v2, attr_length_);
       }
+      case DATES: {
+      int *date1 = (int *)v1;
+      int *date2 = (int *)v2;
+
+      // 按照年、月、日的顺序进行比较
+      if (date1[0] != date2[0]) {
+        return date1[0] - date2[0]; // 比较年份
+      } else if (date1[1] != date2[1]) {
+        return date1[1] - date2[1]; // 比较月份
+      } else {
+        return date1[2] - date2[2]; // 比较日期
+      }
+      } break;
+
       default: {
         ASSERT(false, "unknown attr type. %d", attr_type_);
         return 0;
@@ -145,6 +159,17 @@ public:
           str.push_back(v[i]);
         }
         return str;
+      }
+      case DATES:{
+        // 假设日期格式为YYYY-MM-DD
+        std::string date_str;
+        int *date_values = (int *)v;
+        date_str += std::to_string(date_values[0]); // 年份
+        date_str += "-";
+        date_str += std::to_string(date_values[1]); // 月份
+        date_str += "-";
+        date_str += std::to_string(date_values[2]); // 日期
+        return date_str;
       }
       default: {
         ASSERT(false, "unknown attr type. %d", attr_type_);
