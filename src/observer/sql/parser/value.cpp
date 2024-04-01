@@ -64,6 +64,10 @@ void Value::set_data(char *data, int length)
       num_value_.bool_value_ = *(int *)data != 0;
       length_                = length;
     } break;
+    case DATES:{
+      num_value_.date_value_ = *(int *)data;
+      length_ = length;
+    }break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
     } break;
@@ -115,15 +119,20 @@ void Value::set_value(const Value &value)
     case BOOLEANS: {
       set_boolean(value.get_boolean());
     } break;
+    case DATES:{
+      set_date(value.get_date());
+    }
     case UNDEFINED: {
       ASSERT(false, "got an invalid value type");
     } break;
   }
 }
+
 // value.cpp
+
 void Value::set_date(int val) {
   attr_type_             = DATES;
-  num_value_.bool_value_ = val;
+  num_value_.date_value_ = val;
   length_                = sizeof(val);
 }
 
@@ -158,7 +167,7 @@ std::string Value::to_string() const
       os << str_value_;
     } break;
     case DATES:{
-      os << num_value_.int_value_;
+      os << num_value_.date_value_;
     }
     default: {
       LOG_WARN("unsupported attr type: %d", attr_type_);
@@ -185,14 +194,13 @@ int Value::compare(const Value &other) const
       } break;
       case BOOLEANS: {
         return common::compare_int((void *)&this->num_value_.bool_value_, (void *)&other.num_value_.bool_value_);
-      }
+      }break;
       case DATES:{
-        if (date_value_ != nullptr && v.date_value_ != nullptr) {
-        if (date_value_ < v.date_value_) return -1;
-        if (date_value_ > v.date_value_) return 1;
-        return 0;
-      }
-      }
+      return common::compare_int((void *)&this->num_value_.date_value_, (void *)&other.num_value_.date_value_);
+      }break;
+      case UNDEFINED:{
+        LOG_WARN("ERROR!");
+      }break;
       default: {
         LOG_WARN("unsupported type: %d", this->attr_type_);
       }
@@ -229,7 +237,7 @@ int Value::get_int() const
       return (int)(num_value_.bool_value_);
     }
     case DATES :{
-      return (int)(num_value_.bool_value_);
+      return (int)(num_value_.date_value_);
     }
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
@@ -290,7 +298,7 @@ float Value::get_float() const
       return float(num_value_.bool_value_);
     } break;
       case DATES :{
-      return float(num_value_.bool_value_);
+      return float(num_value_.date_value_);
     }
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
@@ -331,7 +339,7 @@ bool Value::get_boolean() const
       return val >= EPSILON || val <= -EPSILON;
     } break;
     case BOOLEANS: {
-      return num_value_.bool_value_;
+      return num_value_.date_value_;
     } break;
         case DATES: { // 假设DATES是date类型的枚举值
       return num_value_.date_value_ != 0;
