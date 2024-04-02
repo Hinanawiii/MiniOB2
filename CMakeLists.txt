@@ -10,6 +10,10 @@ SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
+set(CMAKE_PREFIX_PATH "/workspace/MiniOB2/deps/3rd/libevent/build/")
+set(GTest_DIR "/workspace/MiniOB2/deps/3rd/googletest/build/googletest/generated")
+set(GTest_DIR "/workspace/MiniOB2/deps/3rd/googletest/build/googletest/CMakeFiles/Export/lib/cmake/GTest")
+
 OPTION(ENABLE_ASAN "Enable build with address sanitizer" ON)
 OPTION(ENABLE_TSAN "Build with thread sanitizer" OFF)
 OPTION(ENABLE_UBSAN "Build with undefined behavior sanitizer" OFF)

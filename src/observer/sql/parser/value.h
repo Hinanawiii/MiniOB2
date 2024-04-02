@@ -65,6 +65,7 @@ public:
   void set_value(const Value &value);
   void set_date(int val) ;
   int get_date() const ;
+  bool validate_date(int date);
   std::string to_string() const;
 
   int compare(const Value &other) const;

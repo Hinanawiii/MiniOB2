@@ -46,6 +46,13 @@ Value::Value(bool val) { set_boolean(val); }
 
 Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
 
+Value::Value(const char *date, int len, int flag){
+            int year = 0, month = 0, day = 0;
+            sscanf(date, "%d-%d-%d", &year, &month, &day);
+            date_value_=year * 10000 + month * 100 + day;
+            set_date(date_value_);
+            }
+
 void Value::set_data(char *data, int length)
 {
   switch (attr_type_) {
@@ -130,11 +137,59 @@ void Value::set_value(const Value &value)
 
 // value.cpp
 
+bool Value::validate_date(int date) {
+  int year = date / 10000;
+  int month = (date / 100) % 100;
+  int day = date % 100;
+
+  // Check for valid month
+  if (month < 1 || month > 12) {
+    return false;
+  }
+
+  // Check for valid day based on month
+  int days_in_month;
+  switch (month) {
+    case 1: // January
+    case 3: // March
+    case 5: // May
+    case 7: // July
+    case 8: // August
+    case 10: // October
+    case 12: // December
+      days_in_month = 31;
+      break;
+    case 4: // April
+    case 6: // June
+    case 9: // September
+    case 11: // November
+      days_in_month = 30;
+      break;
+    case 2: // February
+      days_in_month = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) ? 29 : 28;
+      break;
+    default:
+      return false; // Invalid month
+  }
+
+  if (day < 1 || day > days_in_month) {
+    return false;
+  }
+
+  return true;
+}
+
 void Value::set_date(int val) {
+  if(validate_date(val)){
   attr_type_             = DATES;
   num_value_.date_value_ = val;
   length_                = sizeof(val);
+  }else{
+    return ;
+  }
 }
+
+
 
 
 
@@ -341,7 +396,7 @@ bool Value::get_boolean() const
     case BOOLEANS: {
       return num_value_.date_value_;
     } break;
-        case DATES: { // 假设DATES是date类型的枚举值
+    case DATES: { // 假设DATES是date类型的枚举值
       return num_value_.date_value_ != 0;
     } break;
     default: {
