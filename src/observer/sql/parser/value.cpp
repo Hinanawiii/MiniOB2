@@ -47,11 +47,46 @@ Value::Value(bool val) { set_boolean(val); }
 Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
 
 Value::Value(const char *date, int len, int flag){
+          
             int year = 0, month = 0, day = 0,date_value_=0;
             sscanf(date, "%d-%d-%d", &year, &month, &day);
+            if((year<1000||year>9999)||
+            (month<=0||month>12)||
+            (day<=0||day>31)){
+            LOG_WARN("FAILURE");
+            }
+            int days_in_month=0;
+            switch (month) {
+            case 1: // January
+            case 3: // March
+            case 5: // May
+            case 7: // July
+            case 8: // August
+            case 10: // October
+            case 12: // December
+            days_in_month = 31;
+            break;
+            case 4: // April
+            case 6: // June
+            case 9: // September
+            case 11: // November
+            days_in_month = 30;
+            break;
+            case 2: // February
+            days_in_month = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) ? 29 : 28;
+            break;
+            default:
+            LOG_WARN("FAILURE"); // Invalid month
+            }
+
+              if (day < 1 || day > days_in_month) 
+              {
+              LOG_WARN("FAILURE");
+              }
             date_value_=year * 10000 + month * 100 + day;
             set_date(date_value_);
             }
+
 void Value::set_data(char *data, int length)
 {
   switch (attr_type_) {
