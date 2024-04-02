@@ -47,12 +47,11 @@ Value::Value(bool val) { set_boolean(val); }
 Value::Value(const char *s, int len /*= 0*/) { set_string(s, len); }
 
 Value::Value(const char *date, int len, int flag){
-            int year = 0, month = 0, day = 0;
+            int year = 0, month = 0, day = 0,date_value_=0;
             sscanf(date, "%d-%d-%d", &year, &month, &day);
             date_value_=year * 10000 + month * 100 + day;
             set_date(date_value_);
             }
-
 void Value::set_data(char *data, int length)
 {
   switch (attr_type_) {
@@ -185,13 +184,9 @@ void Value::set_date(int val) {
   num_value_.date_value_ = val;
   length_                = sizeof(val);
   }else{
-    return ;
+    LOG_WARN("FAILURE");
   }
 }
-
-
-
-
 
 const char *Value::data() const
 {
