@@ -44,7 +44,49 @@ enum class BplusTreeOperationType
   INSERT,
   DELETE,
 };
+static bool testvalid(void * v)
+{
+      int date_value = *(int *)v;
+      int year = date_value / 10000;
+      int month = (date_value / 100) % 100;
+      int day = date_value % 100;
 
+          // Check for valid month
+          if (month < 1 || month > 12) {
+          LOG_WARN("FAILURE");
+          }
+
+          // Check for valid day based on month
+          int days_in_month;
+          switch (month) {
+          case 1: // January
+          case 3: // March
+          case 5: // May
+          case 7: // July
+          case 8: // August
+          case 10: // October
+          case 12: // December
+            days_in_month = 31;
+          break;
+          case 4: // April
+          case 6: // June
+          case 9: // September
+          case 11: // November
+            days_in_month = 30;
+          break;
+          case 2: // February
+            days_in_month = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) ? 29 : 28;
+          break;
+          default:
+          LOG_WARN("FAILURE");// Invalid month
+      }
+
+      if (day < 1 || day > days_in_month) {
+        LOG_WARN("FAILURE");
+        
+      }
+      return true;
+}
 /**
  * @brief 属性比较(BplusTree)
  * @ingroup BPlusTree
@@ -73,17 +115,12 @@ public:
         return common::compare_string((void *)v1, attr_length_, (void *)v2, attr_length_);
       }
       case DATES: {
-        return common::compare_int((void *)v1, (void *)v2);  
-      // int *date1 = (int *)v1;
-      // int *date2 = (int *)v2;
-      // // 按照年、月、日的顺序进行比较
-      // if (date1[0] != date2[0]) {
-      //   return date1[0] - date2[0]; // 比较年份
-      // } else if (date1[1] != date2[1]) {
-      //   return date1[1] - date2[1]; // 比较月份
-      // } else {
-      //   return date1[2] - date2[2]; // 比较日期
-      // }
+        if(testvalid((void *)v1)&&testvalid((void *)v2))
+        {
+         return common::compare_int((void *)v1, (void *)v2);  
+        }else
+        LOG_WARN("FAILURE");
+        return 0;
       } break;
       default: {
         ASSERT(false, "unknown attr type. %d", attr_type_);
