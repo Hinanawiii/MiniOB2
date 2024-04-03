@@ -160,11 +160,45 @@ public:
         return str;
       }
       case DATES:{
-        // 假设日期格式为YYYY-MM-DD
       int date_value = *(int *)v;
       int year = date_value / 10000;
       int month = (date_value / 100) % 100;
       int day = date_value % 100;
+
+          // Check for valid month
+          if (month < 1 || month > 12) {
+          LOG_WARN("FAILURE");
+          }
+
+          // Check for valid day based on month
+          int days_in_month;
+          switch (month) {
+          case 1: // January
+          case 3: // March
+          case 5: // May
+          case 7: // July
+          case 8: // August
+          case 10: // October
+          case 12: // December
+            days_in_month = 31;
+          break;
+          case 4: // April
+          case 6: // June
+          case 9: // September
+          case 11: // November
+            days_in_month = 30;
+          break;
+          case 2: // February
+            days_in_month = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) ? 29 : 28;
+          break;
+          default:
+          LOG_WARN("FAILURE");// Invalid month
+      }
+
+      if (day < 1 || day > days_in_month) {
+        LOG_WARN("FAILURE");
+        
+      }
       return std::to_string(year) + "-" + std::to_string(month) + "-" + std::to_string(day);
       }
       default: {

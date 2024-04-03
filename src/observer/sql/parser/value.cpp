@@ -172,7 +172,7 @@ void Value::set_value(const Value &value)
 
 // value.cpp
 
-bool Value::validate_date(int date) {
+bool Value::validate_date(int date) const {
   int year = date / 10000;
   int month = (date / 100) % 100;
   int day = date % 100;
@@ -356,8 +356,10 @@ int Value::get_date() const
     case BOOLEANS: {
       return (int)(num_value_.bool_value_);
     }
-    case DATES: { // 假设DATES是date类型的枚举值
+    case DATES: { 
+      if(validate_date(num_value_.date_value_))// 假设DATES是date类型的枚举值
       return num_value_.date_value_;
+      else LOG_WARN("FAILURE");
     }
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
