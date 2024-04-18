@@ -44,49 +44,7 @@ enum class BplusTreeOperationType
   INSERT,
   DELETE,
 };
-static bool testvalid(void * v)
-{
-      int date_value = *(int *)v;
-      int year = date_value / 10000;
-      int month = (date_value / 100) % 100;
-      int day = date_value % 100;
 
-          // Check for valid month
-          if (month < 1 || month > 12) {
-          LOG_WARN("FAILURE");
-          }
-
-          // Check for valid day based on month
-          int days_in_month;
-          switch (month) {
-          case 1: // January
-          case 3: // March
-          case 5: // May
-          case 7: // July
-          case 8: // August
-          case 10: // October
-          case 12: // December
-            days_in_month = 31;
-          break;
-          case 4: // April
-          case 6: // June
-          case 9: // September
-          case 11: // November
-            days_in_month = 30;
-          break;
-          case 2: // February
-            days_in_month = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) ? 29 : 28;
-          break;
-          default:
-          LOG_WARN("FAILURE");// Invalid month
-      }
-
-      if (day < 1 || day > days_in_month) {
-        LOG_WARN("FAILURE");
-        
-      }
-      return true;
-}
 /**
  * @brief 属性比较(BplusTree)
  * @ingroup BPlusTree
@@ -108,20 +66,15 @@ public:
       case INTS: {
         return common::compare_int((void *)v1, (void *)v2);
       } break;
+      case DATES: {
+        return common::compare_date((void *)v1, (void *)v2);//这里就是模板
+      }
       case FLOATS: {
         return common::compare_float((void *)v1, (void *)v2);
       }
       case CHARS: {
         return common::compare_string((void *)v1, attr_length_, (void *)v2, attr_length_);
       }
-      case DATES: {
-        if(testvalid((void *)v1)&&testvalid((void *)v2))
-        {
-         return common::compare_int((void *)v1, (void *)v2);  
-        }else
-        LOG_WARN("FAILURE");
-        return 0;
-      } break;
       default: {
         ASSERT(false, "unknown attr type. %d", attr_type_);
         return 0;
@@ -195,48 +148,6 @@ public:
           str.push_back(v[i]);
         }
         return str;
-      }
-      case DATES:{
-      int date_value = *(int *)v;
-      int year = date_value / 10000;
-      int month = (date_value / 100) % 100;
-      int day = date_value % 100;
-
-          // Check for valid month
-          if (month < 1 || month > 12) {
-          LOG_WARN("FAILURE");
-          }
-
-          // Check for valid day based on month
-          int days_in_month;
-          switch (month) {
-          case 1: // January
-          case 3: // March
-          case 5: // May
-          case 7: // July
-          case 8: // August
-          case 10: // October
-          case 12: // December
-            days_in_month = 31;
-          break;
-          case 4: // April
-          case 6: // June
-          case 9: // September
-          case 11: // November
-            days_in_month = 30;
-          break;
-          case 2: // February
-            days_in_month = (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) ? 29 : 28;
-          break;
-          default:
-          LOG_WARN("FAILURE");// Invalid month
-      }
-
-      if (day < 1 || day > days_in_month) {
-        LOG_WARN("FAILURE");
-        
-      }
-      return std::to_string(year) + "-" + std::to_string(month) + "-" + std::to_string(day);
       }
       default: {
         ASSERT(false, "unknown attr type. %d", attr_type_);

@@ -26,7 +26,11 @@ enum AttrType
   CHARS,     ///< 字符串类型
   INTS,      ///< 整数类型(4字节)
   FLOATS,    ///< 浮点数类型(4字节)
-  DATES ,
+
+//******************************
+  DATES,     ///< 整数类型(4字节)
+//******************************
+
   BOOLEANS,  ///< boolean类型，当前不是由parser解析出来的，是程序内部使用的
 };
 
@@ -48,9 +52,10 @@ public:
   explicit Value(float val);
   explicit Value(bool val);
   explicit Value(const char *s, int len = 0);
-  explicit Value(const char *date, int len, int flag);
 
-
+  //**********************************************************
+  explicit Value(const char *s, int len , int flag);
+  //**********************************************************
 
   Value(const Value &other)            = default;
   Value &operator=(const Value &other) = default;
@@ -61,11 +66,14 @@ public:
   void set_int(int val);
   void set_float(float val);
   void set_boolean(bool val);
+
+  //**********************************************************
+  void set_date(int val);
+  //**********************************************************
+
   void set_string(const char *s, int len = 0);
   void set_value(const Value &value);
-  void set_date(int val) ;
-  int get_date() const ;
-  bool validate_date(int date) const;
+
   std::string to_string() const;
 
   int compare(const Value &other) const;
@@ -74,6 +82,17 @@ public:
   int         length() const { return length_; }
 
   AttrType attr_type() const { return attr_type_; }
+
+
+//**********************************************************
+//-------------------------辅助函数--------------------------
+  int date_to_days(int year,int month,int day);
+  int is_leap_year(int year)const;
+  int days_in_month(int year, int month)const;
+  std::string days_to_datestr(int val)const;
+  bool  isValidDate(int year,int month,int day);
+//----------------------------------------------------------
+//**********************************************************
 
 public:
   /**
@@ -85,6 +104,9 @@ public:
   std::string get_string() const;
   bool        get_boolean() const;
 
+//**********************get_date******************************
+  int         get_date() const;
+//************************************************************
 private:
   AttrType attr_type_ = UNDEFINED;
   int      length_    = 0;
@@ -92,9 +114,12 @@ private:
   union
   {
     int   int_value_;
+     //**************date_value*******************
+    int   date_value_;
+    //*******************************************
     float float_value_;
     bool  bool_value_;
-    int date_value_;    
+
   } num_value_;
   std::string str_value_;
 };

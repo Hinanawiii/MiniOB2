@@ -55,6 +55,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 
 //标识tokens
 %token  SEMICOLON
+        SUM_F
         CREATE
         DROP
         TABLE
@@ -532,6 +533,7 @@ rel_attr:
       free($1);
       free($3);
     }
+    
     ;
 
 attr_list:
