@@ -56,6 +56,10 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 //标识tokens
 %token  SEMICOLON
         SUM_F
+        MAX_F
+        MIN_F
+        AVG_F
+        COUNT_F
         CREATE
         DROP
         TABLE
@@ -106,7 +110,10 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   ConditionSqlNode *                condition;
   Value *                           value;
   enum CompOp                       comp;
+  enum AggrOp                      aggregation;
+  //照猫画虎
   RelAttrSqlNode *                  rel_attr;
+  RelAttrSqlNode *                  rel_attr_aggr;
   std::vector<AttrInfoSqlNode> *    attr_infos;
   AttrInfoSqlNode *                 attr_info;
   Expression *                      expression;
@@ -114,6 +121,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   std::vector<Value> *              value_list;
   std::vector<ConditionSqlNode> *   condition_list;
   std::vector<RelAttrSqlNode> *     rel_attr_list;
+  std::vector<RelAttrSqlNode> *     rel_attr_aggr_list;
   std::vector<std::string> *        relation_list;
   char *                            string;
   int                               number;
@@ -165,6 +173,11 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 %type <sql_node>            help_stmt
 %type <sql_node>            exit_stmt
 %type <sql_node>            command_wrapper
+
+%type <aggregation>         aggr_op
+%type <rel_attr_aggr>       rel_attr_aggr
+%type <rel_attr_aggr_list>  rel_attr_aggr_list
+//新增的放一块了
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
 
@@ -520,6 +533,51 @@ select_attr:
     }
     ;
 
+rel_attr_aggr:
+    '*'{
+      $$=new RelAttrSqlNode;
+      $$->relation_name="";
+      $$->attribute_name="*";
+    }
+    |ID{
+      $$ =new RelAttrSqlNode;
+      $$->attribute_name=$1;
+      free($1);
+    }
+    |ID DOT ID{
+      $$=new RelAttrSqlNode;
+      $$->relation_name=$1;
+      $$->attribute_name=$3;
+      free($1);
+      free($3);
+    }
+    ;
+rel_attr_aggr_list:
+    /* empty */
+    {
+      $$ = nullptr;
+    }
+    | COMMA rel_attr_aggr rel_attr_aggr_list {
+      if ($3 != nullptr) {
+        $$ = $3;
+      } else {
+        $$ = new std::vector<RelAttrSqlNode>;
+      }
+
+      $$->emplace_back(*$2);
+      delete $2;
+    }
+    ;
+
+
+aggr_op:
+      SUM_F{$$= AGGR_SUM;}
+      |MIN_F{$$=AGGR_MIN;}
+      |MAX_F{$$=AGGR_MAX;}
+      |AVG_F{$$=AGGR_AVG;}
+      |COUNT_F{$$=AGGR_COUNT;}
+      ;
+
 rel_attr:
     ID {
       $$ = new RelAttrSqlNode;
@@ -533,9 +591,30 @@ rel_attr:
       free($1);
       free($3);
     }
+    |aggr_op LBRACE rel_attr_aggr rel_attr_aggr_list RBRACE{
+      $$ =$3;
+      $$->aggregation=$1;
+      if($4!=nullptr){
+        $$->vaild=false;
+        delete $4;
+      }
+      /*尤其是↑这两个地方，我真的服了*/
+      /*我就奇怪了为啥我写的不行，说实话借鉴的代码里也就这一个能动，还是说别的操作有问题？*/
+      /*感觉有的代码好像行，但是别的地方出问题就被我否定了，事到如今已经不知道谁对谁错了*/
+      /*尤其是↓这两个地方，我真的服了*/
+    }
+    |aggr_op LBRACE RBRACE{
+      $$= new RelAttrSqlNode;
+      $$->relation_name="";
+      $$->attribute_name="";
+      $$->aggregation=$1;
+      //empty column
+      $$->vaild=false;
+    }
     
     ;
-
+/*这什么玩意bug也太多了吧，我都不敢写了，稍微改一点爆出来八百个错，吓四个人*/
+/*此部分过于不稳定，代码有参考网络*/
 attr_list:
     /* empty */
     {

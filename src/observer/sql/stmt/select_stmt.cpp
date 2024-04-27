@@ -26,13 +26,21 @@ SelectStmt::~SelectStmt()
     filter_stmt_ = nullptr;
   }
 }
-
-static void wildcard_fields(Table *table, std::vector<Field> &field_metas)
+//这个b编译器一会能查定义一会查不了定义，也是有点让人难蚌，好几天我都找不到这个函数，结果突然有一天就跳出来了，我都快以为是库函数了
+static void wildcard_fields(Table *table, std::vector<Field> &field_metas,AggrOp aggregation_=AggrOp::AGGR_NONE)
 {
   const TableMeta &table_meta = table->table_meta();
-  const int        field_num  = table_meta.field_num();
-  for (int i = table_meta.sys_field_num(); i < field_num; i++) {
-    field_metas.push_back(Field(table, table_meta.field(i)));
+  const int field_num = table_meta.field_num();
+for (int i = table_meta.sys_field_num(); i < field_num; i++) {
+        // 如果指定了聚合操作为计数
+        if (aggregation_ == AggrOp::AGGR_COUNT) {
+            // 添加一个计数聚合操作的字段到字段元数据向量中
+            field_metas.push_back(Field(table, table_meta.field(i), AggrOp::AGGR_COUNT_ALL));
+            // 由于已经添加了一个字段，所以可以直接结束循环
+            break;
+        } else {
+            // 否则，根据指定的聚合操作添加字段到字段元数据向量中
+            field_metas.push_back(Field(table, table_meta.field(i), aggregation_));
   }
 }
 
@@ -65,13 +73,43 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
 
   // collect query fields in `select` statement
   std::vector<Field> query_fields;
+
+  AggrOp curaggregation=AggrOp::AGGR_NONE;
+  bool res=true;
+
   for (int i = static_cast<int>(select_sql.attributes.size()) - 1; i >= 0; i--) {
+    if(!res)
+    {
+      return RC::INVALID_ARGUMENT;
+    }//加一个判断
     const RelAttrSqlNode &relation_attr = select_sql.attributes[i];
 
-    if (common::is_blank(relation_attr.relation_name.c_str()) &&
+    const AggrOp aggregation_=relation_attr.aggregation;
+    if(i==static_cast<int>(select_sql.attributes.size()) - 1){
+      curaggregation= aggregation_;
+    }
+    else{
+      if((curaggregation==AggrOp::AGGR_NONE&&aggregation_!=AggrOp::AGGR_NONE)||(curaggregation!=AggrOp::AGGR_NONE&&aggregation_==AggrOp::AGGR_NONE)){
+        res=false;
+      }
+    }
+    if(!res)
+    {
+      return RC::INVALID_ARGUMENT;
+    }
+    bool vaild_=relation_attr.vaild;
+    if(!vaild_){
+      return RC::INVALID_ARGUMENT;
+    }//反正全是判断
+
+      if (common::is_blank(relation_attr.relation_name.c_str()) &&
         0 == strcmp(relation_attr.attribute_name.c_str(), "*")) {
+
+          if(aggregation_!=AggrOp::AGGR_NONE&&aggregation_!=AggrOp::AGGR_COUNT){
+            return RC::INVALID_ARGUMENT;
+          }
       for (Table *table : tables) {
-        wildcard_fields(table, query_fields);
+        wildcard_fields(table, query_fields,aggregation_);
       }
 
     } else if (!common::is_blank(relation_attr.relation_name.c_str())) {
@@ -84,7 +122,7 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
           return RC::SCHEMA_FIELD_MISSING;
         }
         for (Table *table : tables) {
-          wildcard_fields(table, query_fields);
+          wildcard_fields(table, query_fields,aggregation_);
         }
       } else {
         auto iter = table_map.find(table_name);
@@ -95,7 +133,10 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
 
         Table *table = iter->second;
         if (0 == strcmp(field_name, "*")) {
-          wildcard_fields(table, query_fields);
+            if(aggregation_!=AggrOp::AGGR_NONE&&aggregation_!=AggrOp::AGGR_COUNT){
+            return RC::INVALID_ARGUMENT;
+          }
+          wildcard_fields(table, query_fields,aggregation_);//好多复用，感觉代码烂了
         } else {
           const FieldMeta *field_meta = table->table_meta().field(field_name);
           if (nullptr == field_meta) {
@@ -104,6 +145,8 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
           }
 
           query_fields.push_back(Field(table, field_meta));
+          const AggrOp aggregation_=relation_attr.aggregation;
+          query_fields.push_back(Field(table, field_meta,aggregation_));
         }
       }
     } else {
@@ -120,6 +163,8 @@ RC SelectStmt::create(Db *db, const SelectSqlNode &select_sql, Stmt *&stmt)
       }
 
       query_fields.push_back(Field(table, field_meta));
+      const AggrOp aggregation_=relation_attr.aggregation;
+      query_fields.push_back(Field(table, field_meta,aggregation_));
     }
   }
 

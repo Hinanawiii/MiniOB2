@@ -29,7 +29,7 @@ class Expression;
 /**
  * @brief 描述一个属性
  * @ingroup SQLParser
- * @details 属性，或者说字段(column, field)
+ * @details 属性，或者说字段(column, field)，然后在这补上聚合的
  * Rel -> Relation
  * Attr -> Attribute
  */
@@ -37,6 +37,10 @@ struct RelAttrSqlNode
 {
   std::string relation_name;   ///< relation name (may be NULL) 表名
   std::string attribute_name;  ///< attribute name              属性名
+
+  //下面是新增
+  AggrOp      aggregation = AGGR_NONE;
+  bool vaild=true;
 };
 
 /**
@@ -53,6 +57,22 @@ enum CompOp
   GREAT_THAN,   ///< ">"
   NO_OP
 };
+
+/**
+ * @brief 照着上面画的聚合运算符
+ * @ingroup SQLParser
+ */
+
+enum AggrOp
+{
+  AGGR_NONE,
+  AGGR_SUM,
+  AGGR_MAX,
+  AGGR_MIN,
+  AGGR_AVG,
+  AGGR_COUNT,
+  AGGR_COUNT_ALL
+};//相对应的
 
 /**
  * @brief 表示一个条件比较
