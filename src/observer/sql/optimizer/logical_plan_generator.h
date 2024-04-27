@@ -8,9 +8,6 @@ EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
-//
-// Created by Wangyunlai on 2023/08/16.
-//
 
 #pragma once
 
@@ -30,7 +27,7 @@ class LogicalOperator;
 class LogicalPlanGenerator
 {
 public:
-  LogicalPlanGenerator()          = default;
+  LogicalPlanGenerator() = default;
   virtual ~LogicalPlanGenerator() = default;
 
   RC create(Stmt *stmt, std::unique_ptr<LogicalOperator> &logical_operator);

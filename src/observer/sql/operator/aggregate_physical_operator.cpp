@@ -12,7 +12,7 @@ See the Mulan PSL v2 for more details. */
 // Created by WangYunlai on 2022/6/27.
 //
 
-#pragma once
+
 
 #include "common/log/log.h"
 #include "sql/operator/aggregate_physical_operator.h"
@@ -73,7 +73,7 @@ RC AggregatePhysicalOperator::next()
   if (result_tuple_.cell_num()>0) {
     return RC::RECORD_EOF;
   }
-
+  
   PhysicalOperator *oper = children_[0].get();
   std::vector<Value> result_cells(aggregations_.size(),Value());
   int curnum=0; //统计插图元组个数的
@@ -124,7 +124,7 @@ RC AggregatePhysicalOperator::next()
           else if(result_cells[cell_idx].attr_type()==AttrType::DATES){
             result_cells[cell_idx].set_date(max(result_cells[cell_idx].get_date(),cell.get_date()));
           }break;
-
+        
 
           case AggrOp::AGGR_MIN:
           res[0]=1;
@@ -155,8 +155,8 @@ RC AggregatePhysicalOperator::next()
           else if(result_cells[cell_idx].attr_type()==AttrType::DATES){
             result_cells[cell_idx].set_date(min(result_cells[cell_idx].get_date(),cell.get_date()));
           }break;
-
-
+        
+        
           case AggrOp::AGGR_AVG:
           res[0]=1;
           rc=tuple->cell_at(cell_idx,cell);
@@ -180,7 +180,7 @@ RC AggregatePhysicalOperator::next()
           if(result_cells[cell_idx].attr_type()==AttrType::UNDEFINED){
               result_cells[cell_idx].set_type(AttrType::INTS);
               result_cells[cell_idx].set_int(1);
-
+        
           }
           else{
           result_cells[cell_idx].set_int(result_cells[cell_idx].get_int()+1);
@@ -194,11 +194,10 @@ RC AggregatePhysicalOperator::next()
               result_cells[cell_idx].set_type(AttrType::INTS);
               result_cells[cell_idx].set_int(1);
           }
-          //我感觉这已经是石山代码了，全是复用，code copy 但是不想改了-------------------------------------------------
           else{
           result_cells[cell_idx].set_int(result_cells[cell_idx].get_int()+1);
           }break;
-
+          
         default:
           res[1]=1;
 
@@ -212,8 +211,8 @@ RC AggregatePhysicalOperator::next()
     return RC::RECORD_EOF;
   }
   else{
-
-
+    
+    
   result_tuple_.set_cells(result_cells);
   return rc;
   }
