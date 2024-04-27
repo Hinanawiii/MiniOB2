@@ -14,21 +14,34 @@ See the Mulan PSL v2 for more details. */
 
 #pragma once
 
-#include "storage/field/field_meta.h"
 #include <iostream>
+#include "storage/table/table.h"
+#include "storage/field/field_meta.h"
 
 class TupleCellSpec
 {
 public:
-  TupleCellSpec(const char *table_name, const char *field_name, const char *alias = nullptr);
-  TupleCellSpec(const char *alias);
+  TupleCellSpec(const char *table_name, const char *field_name, const char *alias = nullptr,const AggrOp aggr=AggrOp::AGGR_NONE);
+  //TupleCellSpec(const char *table_name, const char *field_name);
+  TupleCellSpec(const char *alias,const AggrOp aggr=AGGR_NONE);
 
-  const char *table_name() const { return table_name_.c_str(); }
-  const char *field_name() const { return field_name_.c_str(); }
-  const char *alias() const { return alias_.c_str(); }
+  const char *table_name() const
+  {
+    return table_name_.c_str();
+  }
+  const char *field_name() const
+  {
+    return field_name_.c_str();
+  }
+  const char *alias() const
+  {
+    return alias_.c_str();
+  }
 
 private:
   std::string table_name_;
   std::string field_name_;
   std::string alias_;
+  AggrOp aggr_;
 };
+void aggr_to_string(std::string &a,AggrOp cur);
