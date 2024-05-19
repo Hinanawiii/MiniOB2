@@ -55,12 +55,12 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 
 //标识tokens
 %token  SEMICOLON
+        CREATE
         SUM_F
         MAX_F
         MIN_F
         AVG_F
         COUNT_F
-        CREATE
         DROP
         TABLE
         TABLES
@@ -80,8 +80,8 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
         TRX_COMMIT
         TRX_ROLLBACK
         INT_T
+        DATA
         STRING_T
-        DATE_T
         FLOAT_T
         HELP
         EXIT
@@ -94,7 +94,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
         SET
         ON
         LOAD
-        DATA
+        DATE_T
         INFILE
         EXPLAIN
         EQ
@@ -110,8 +110,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   ConditionSqlNode *                condition;
   Value *                           value;
   enum CompOp                       comp;
-  enum AggrOp                      aggregation;
-  //照猫画虎
+  enum AggrOp                       aggregation;
   RelAttrSqlNode *                  rel_attr;
   RelAttrSqlNode *                  rel_attr_aggr;
   std::vector<AttrInfoSqlNode> *    attr_infos;
@@ -141,7 +140,9 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 %type <value>               value
 %type <number>              number
 %type <comp>                comp_op
+%type <aggregation>         aggr_op
 %type <rel_attr>            rel_attr
+%type <rel_attr_aggr>       rel_attr_aggr
 %type <attr_infos>          attr_def_list
 %type <attr_info>           attr_def
 %type <value_list>          value_list
@@ -150,6 +151,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 %type <rel_attr_list>       select_attr
 %type <relation_list>       rel_list
 %type <rel_attr_list>       attr_list
+%type <rel_attr_aggr_list>  rel_attr_aggr_list
 %type <expression>          expression
 %type <expression_list>     expression_list
 %type <sql_node>            calc_stmt
@@ -173,11 +175,6 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 %type <sql_node>            help_stmt
 %type <sql_node>            exit_stmt
 %type <sql_node>            command_wrapper
-
-%type <aggregation>         aggr_op
-%type <rel_attr_aggr>       rel_attr_aggr
-%type <rel_attr_aggr_list>  rel_attr_aggr_list
-//新增的放一块了
 // commands should be a list but I use a single command instead
 %type <sql_node>            commands
 
@@ -308,7 +305,6 @@ create_table_stmt:    /*create table 语句的语法解析树*/
 
       if (src_attrs != nullptr) {
         create_table.attr_infos.swap(*src_attrs);
-        delete src_attrs;
       }
       create_table.attr_infos.emplace_back(*$5);
       std::reverse(create_table.attr_infos.begin(), create_table.attr_infos.end());
@@ -354,10 +350,10 @@ number:
     NUMBER {$$ = $1;}
     ;
 type:
-    INT_T      { $$=INTS; }
-    | STRING_T { $$=CHARS; }
-    | FLOAT_T  { $$=FLOATS; }
-    | DATE_T   { $$=DATES; }
+    INT_T {$$=INTS;}
+    |STRING_T {$$=CHARS;}
+    |FLOAT_T {$$=FLOATS;}
+    |DATE_T {$$=DATES;}
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 
@@ -366,7 +362,6 @@ insert_stmt:        /*insert   语句的语法解析树*/
       $$->insertion.relation_name = $3;
       if ($7 != nullptr) {
         $$->insertion.values.swap(*$7);
-        delete $7;
       }
       $$->insertion.values.emplace_back(*$6);
       std::reverse($$->insertion.values.begin(), $$->insertion.values.end());
@@ -406,10 +401,10 @@ value:
       free($1);
     }
     |DATE_STR{
-      char* tmp = common::substr($1,1,strlen($1)-2);
-      $$ = new Value(tmp,strlen(tmp),1);
+      char* tmp=common::substr($1,1,strlen($1)-2);
+      $$=new Value(tmp,strlen(tmp),1);
       free(tmp);
-    }
+    } 
     ;
     
 delete_stmt:    /*  delete 语句的语法解析树*/
@@ -598,10 +593,6 @@ rel_attr:
         $$->vaild=false;
         delete $4;
       }
-      /*尤其是↑这两个地方，我真的服了*/
-      /*我就奇怪了为啥我写的不行，说实话借鉴的代码里也就这一个能动，还是说别的操作有问题？*/
-      /*感觉有的代码好像行，但是别的地方出问题就被我否定了，事到如今已经不知道谁对谁错了*/
-      /*尤其是↓这两个地方，我真的服了*/
     }
     |aggr_op LBRACE RBRACE{
       $$= new RelAttrSqlNode;
@@ -611,10 +602,8 @@ rel_attr:
       //empty column
       $$->vaild=false;
     }
-    
     ;
-/*这什么玩意bug也太多了吧，我都不敢写了，稍微改一点爆出来八百个错，吓四个人*/
-/*此部分过于不稳定，代码有参考网络*/
+
 attr_list:
     /* empty */
     {
@@ -626,7 +615,7 @@ attr_list:
       } else {
         $$ = new std::vector<RelAttrSqlNode>;
       }
-
+      
       $$->emplace_back(*$2);
       delete $2;
     }

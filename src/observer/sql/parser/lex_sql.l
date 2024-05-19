@@ -104,19 +104,17 @@ VALUES                                  RETURN_TOKEN(VALUES);
 DELETE                                  RETURN_TOKEN(DELETE);
 UPDATE                                  RETURN_TOKEN(UPDATE);
 SET                                     RETURN_TOKEN(SET);
+
 SUM                                     RETURN_TOKEN(SUM_F);
 MAX                                     RETURN_TOKEN(MAX_F);
 MIN                                     RETURN_TOKEN(MIN_F);
 AVG                                     RETURN_TOKEN(AVG_F);
 COUNT                                   RETURN_TOKEN(COUNT_F);
-//就是很正常的加
 BEGIN                                   RETURN_TOKEN(TRX_BEGIN);
 COMMIT                                  RETURN_TOKEN(TRX_COMMIT);
 ROLLBACK                                RETURN_TOKEN(TRX_ROLLBACK);
 INT                                     RETURN_TOKEN(INT_T);
-//DATE在这
 DATE                                    RETURN_TOKEN(DATE_T);
-
 CHAR                                    RETURN_TOKEN(STRING_T);
 FLOAT                                   RETURN_TOKEN(FLOAT_T);
 LOAD                                    RETURN_TOKEN(LOAD);

@@ -55,12 +55,12 @@ extern int yydebug;
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
     SEMICOLON = 258,               /* SEMICOLON  */
-    SUM_F = 259,                   /* SUM_F  */
-    MAX_F = 260,                   /* MAX_F  */
-    MIN_F = 261,                   /* MIN_F  */
-    AVG_F = 262,                   /* AVG_F  */
-    COUNT_F = 263,                 /* COUNT_F  */
-    CREATE = 264,                  /* CREATE  */
+    CREATE = 259,                  /* CREATE  */
+    SUM_F = 260,                   /* SUM_F  */
+    MAX_F = 261,                   /* MAX_F  */
+    MIN_F = 262,                   /* MIN_F  */
+    AVG_F = 263,                   /* AVG_F  */
+    COUNT_F = 264,                 /* COUNT_F  */
     DROP = 265,                    /* DROP  */
     TABLE = 266,                   /* TABLE  */
     TABLES = 267,                  /* TABLES  */
@@ -80,8 +80,8 @@ extern int yydebug;
     TRX_COMMIT = 281,              /* TRX_COMMIT  */
     TRX_ROLLBACK = 282,            /* TRX_ROLLBACK  */
     INT_T = 283,                   /* INT_T  */
-    STRING_T = 284,                /* STRING_T  */
-    DATE_T = 285,                  /* DATE_T  */
+    DATA = 284,                    /* DATA  */
+    STRING_T = 285,                /* STRING_T  */
     FLOAT_T = 286,                 /* FLOAT_T  */
     HELP = 287,                    /* HELP  */
     EXIT = 288,                    /* EXIT  */
@@ -94,7 +94,7 @@ extern int yydebug;
     SET = 295,                     /* SET  */
     ON = 296,                      /* ON  */
     LOAD = 297,                    /* LOAD  */
-    DATA = 298,                    /* DATA  */
+    DATE_T = 298,                  /* DATE_T  */
     INFILE = 299,                  /* INFILE  */
     EXPLAIN = 300,                 /* EXPLAIN  */
     EQ = 301,                      /* EQ  */
@@ -123,8 +123,7 @@ union YYSTYPE
   ConditionSqlNode *                condition;
   Value *                           value;
   enum CompOp                       comp;
-  enum AggrOp                      aggregation;
-  //照猫画虎
+  enum AggrOp                       aggregation;
   RelAttrSqlNode *                  rel_attr;
   RelAttrSqlNode *                  rel_attr_aggr;
   std::vector<AttrInfoSqlNode> *    attr_infos;
@@ -140,7 +139,7 @@ union YYSTYPE
   int                               number;
   float                             floats;
 
-#line 144 "yacc_sql.hpp"
+#line 143 "yacc_sql.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;
