@@ -83,6 +83,11 @@ QUOTE            [\'\"]
 ";"                                     RETURN_TOKEN(SEMICOLON);
 {DOT}                                   RETURN_TOKEN(DOT);
 EXIT                                    RETURN_TOKEN(EXIT);
+SUM                                     RETURN_TOKEN(SUM_F);
+MAX                                     RETURN_TOKEN(MAX_F);
+MIN                                     RETURN_TOKEN(MIN_F);
+AVG                                     RETURN_TOKEN(AVG_F);
+COUNT                                   RETURN_TOKEN(COUNT_F);
 HELP                                    RETURN_TOKEN(HELP);
 DESC                                    RETURN_TOKEN(DESC);
 CREATE                                  RETURN_TOKEN(CREATE);
@@ -104,29 +109,22 @@ VALUES                                  RETURN_TOKEN(VALUES);
 DELETE                                  RETURN_TOKEN(DELETE);
 UPDATE                                  RETURN_TOKEN(UPDATE);
 SET                                     RETURN_TOKEN(SET);
-
-SUM                                     RETURN_TOKEN(SUM_F);
-MAX                                     RETURN_TOKEN(MAX_F);
-MIN                                     RETURN_TOKEN(MIN_F);
-AVG                                     RETURN_TOKEN(AVG_F);
-COUNT                                   RETURN_TOKEN(COUNT_F);
 BEGIN                                   RETURN_TOKEN(TRX_BEGIN);
 COMMIT                                  RETURN_TOKEN(TRX_COMMIT);
 ROLLBACK                                RETURN_TOKEN(TRX_ROLLBACK);
 INT                                     RETURN_TOKEN(INT_T);
-DATE                                    RETURN_TOKEN(DATE_T);
 CHAR                                    RETURN_TOKEN(STRING_T);
 FLOAT                                   RETURN_TOKEN(FLOAT_T);
 LOAD                                    RETURN_TOKEN(LOAD);
 DATA                                    RETURN_TOKEN(DATA);
+DATE                                    RETURN_TOKEN(DATE_T);
 INFILE                                  RETURN_TOKEN(INFILE);
 EXPLAIN                                 RETURN_TOKEN(EXPLAIN);
 {ID}                                    yylval->string=strdup(yytext); RETURN_TOKEN(ID);
-
-{QUOTE}[0-9]+-[0-9]+-[0-9]+{QUOTE} yylval->string=strdup(yytext);RETURN_TOKEN(DATE_STR);
-
+{QUOTE}[0-9]+-[0-9]+-[0-9]+{QUOTE}      yylval->string=strdup(yytext); RETURN_TOKEN(DATE_STR);
 "("                                     RETURN_TOKEN(LBRACE);
 ")"                                     RETURN_TOKEN(RBRACE);
+
 ","                                     RETURN_TOKEN(COMMA);
 "="                                     RETURN_TOKEN(EQ);
 "<="                                    RETURN_TOKEN(LE);
