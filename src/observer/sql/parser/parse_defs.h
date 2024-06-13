@@ -28,6 +28,21 @@ class Expression;
  */
 
 /**
+ * @brief 描述aggr运算符
+ * @ingroup SQLParser
+ */
+enum AggrOp 
+{
+  AGGR_SUM,
+  AGGR_MAX,
+  AGGR_MIN,
+  AGGR_AVG,  
+  AGGR_COUNT, 
+  AGGR_COUNT_ALL,
+  AGGR_NONE
+};
+
+/**
  * @brief 描述一个属性
  * @ingroup SQLParser
  * @details 属性，或者说字段(column, field)
@@ -35,25 +50,12 @@ class Expression;
  * Attr -> Attribute
  */
 
-
-enum AggrOp
-{
-  AGGR_NONE,
-  AGGR_SUM,
-  AGGR_MAX,
-  AGGR_MIN,
-  AGGR_AVG,
-  AGGR_COUNT,
-  AGGR_COUNT_ALL
-};
-
-
 struct RelAttrSqlNode
 {
   std::string relation_name;   ///< relation name (may be NULL) 表名
   std::string attribute_name;  ///< attribute name              属性名
-  AggrOp      aggregation = AGGR_NONE;
-  bool vaild=true;
+  AggrOp      aggregation = AGGR_NONE;  ///< aggregation name
+  bool        valid = true;
 };
 
 /**
@@ -109,6 +111,17 @@ struct SelectSqlNode
   std::vector<std::string>        relations;     ///< 查询的表
   std::vector<ConditionSqlNode>   conditions;    ///< 查询条件，使用AND串联起来多个条件
 };
+
+/**
+ * @brief Join子句
+ * @ingroup SQLParser
+ */
+struct JoinSqlNode
+{
+  std::vector<std::string>        relations;     ///< 查询的表
+  std::vector<ConditionSqlNode>   conditions;    ///< 查询条件，使用AND串联起来多个条件
+};
+
 
 /**
  * @brief 算术表达式计算的语法树

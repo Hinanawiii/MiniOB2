@@ -9,7 +9,7 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
 //
-// Created by WangYunlai on 2023/4/25.
+// Created by AbsoluFr on 2023/4/25.
 //
 
 #pragma once
@@ -18,7 +18,6 @@ See the Mulan PSL v2 for more details. */
 #include <memory>
 
 #include "sql/expr/expression.h"
-#include "storage/field/field.h"
 #include "sql/operator/logical_operator.h"
 #include "sql/parser/parse_defs.h"
 
@@ -37,11 +36,8 @@ public:
     return LogicalOperatorType::AGGREGATE;
   }
 
-
   const std::vector<Field> &fields() const { return fields_; }
 
 private:
   std::vector<Field> fields_;
 };
-
-//怎么啥都没有，我不好说

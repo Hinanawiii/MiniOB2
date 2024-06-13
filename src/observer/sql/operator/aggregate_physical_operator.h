@@ -1,15 +1,5 @@
-/* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
-miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
-THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-See the Mulan PSL v2 for more details. */
-
 //
-// Created by WangYunlai on 2022/6/9.
+// Created by AbsoluDe on 2024/4/21.
 //
 
 #pragma once
@@ -18,22 +8,19 @@ See the Mulan PSL v2 for more details. */
 #include "sql/parser/parse.h"
 #include "sql/expr/tuple.h"
 
-class Trx;
 
 /**
- * @brief 物理算子，删除
+ * @brief 物理算子，aggregate
  * @ingroup PhysicalOperator
  */
 class AggregatePhysicalOperator : public PhysicalOperator
 {
 public:
-  AggregatePhysicalOperator()
-  {}
-  void add_aggregation(const AggrOp aggregation){
-    aggregations_.push_back(aggregation);
-  };
+  AggregatePhysicalOperator(){}
 
   virtual ~AggregatePhysicalOperator() = default;
+
+  void add_aggregation(const AggrOp aggregation);
 
   PhysicalOperatorType type() const override
   {
@@ -44,14 +31,12 @@ public:
   RC next() override;
   RC close() override;
 
-  Tuple *current_tuple() override;
+  Tuple *current_tuple() override
+  {
+    return &result_tuple_;
+  }
 
 private:
-    std::vector<AggrOp> aggregations_;
-    ValueListTuple result_tuple_;
+  std::vector<AggrOp> aggregations_;
+  ValueListTuple result_tuple_;
 };
-
-//真是啥都没有阿
-
-
-//也不能这么说，旁边有别的能抄一下

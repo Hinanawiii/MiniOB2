@@ -1,51 +1,12 @@
-/* Copyright (c) 2021 OceanBase and/or its affiliates. All rights reserved.
-miniob is licensed under Mulan PSL v2.
-You can use this software according to the terms and conditions of the Mulan PSL v2.
-You may obtain a copy of Mulan PSL v2 at:
-         http://license.coscl.org.cn/MulanPSL2
-THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-See the Mulan PSL v2 for more details. */
-
 //
-// Created by WangYunlai on 2022/6/27.
+// Created by AbsoluDe on 2024/4/21.
 //
-
-
 
 #include "common/log/log.h"
 #include "sql/operator/aggregate_physical_operator.h"
 #include "storage/record/record.h"
 #include "storage/table/table.h"
 #include "storage/trx/trx.h"
-#include "sql/stmt/delete_stmt.h"
-
-/*
-void int_to_String(int intDate,std::string &strDate){
-  int year=0;
-  int month=0;
-  int day=0;
-  int res=0;
-  year= intDate/10000 ; 
-  month=(intDate-year*10000)/100;
-  day=intDate%100;
-    
-    std::stringstream ss;
-    ss << year;
-    ss<<'-';
-    if(month<10){
-      ss<<res;
-    }
-    ss << month;
-    ss<<'-';
-    if(day<10){
-      ss<<res;
-    }
-    ss << day;
-    strDate=ss.str();
-}
-*/
 
 RC AggregatePhysicalOperator::open(Trx *trx)
 {
@@ -60,162 +21,105 @@ RC AggregatePhysicalOperator::open(Trx *trx)
     return rc;
   }
 
-
   return RC::SUCCESS;
 }
 
-
-
-
 RC AggregatePhysicalOperator::next()
 {
-  RC rc = RC::SUCCESS;
-  if (result_tuple_.cell_num()>0) {
+  if (result_tuple_.cell_num() > 0) {
     return RC::RECORD_EOF;
   }
-  
+
+  RC rc = RC::SUCCESS;
   PhysicalOperator *oper = children_[0].get();
-  std::vector<Value> result_cells(aggregations_.size(),Value());
-  int curnum=0; //统计插图元组个数的
-  std::vector<int> res={0,0};
+
+  std::vector<Value> result_cells;
+
+  // for calculating avg, maintain iteration times
+  int aggr_size = (int)aggregations_.size();
+  int iter_time[aggr_size]; 
+  for (int i = 0; i < aggr_size; i++) {
+    iter_time[i] = 0;
+    //const AggrOp aggregation = aggregations_[i];
+    result_cells.push_back(Value());
+  }
+
+  
   while (RC::SUCCESS == (rc = oper->next())) {
-    curnum++;
+    // get tuple
     Tuple *tuple = oper->current_tuple();
-    for(int cell_idx =0;cell_idx<(int)aggregations_.size();cell_idx++){
-      const AggrOp aggregation=aggregations_[cell_idx];
+
+    // do aggregate
+    for (int cell_idx = 0; cell_idx < aggr_size; cell_idx++) {
+      const AggrOp aggregation = aggregations_[cell_idx];
+
       Value cell;
-      AttrType attr_type = AttrType::INTS;
-      switch (aggregation){
+      AttrType attr_type;
+
+      rc = tuple->cell_at(cell_idx, cell);
+      attr_type = cell.attr_type();
+
+      if (iter_time[cell_idx] == 0 && aggregation != AggrOp::AGGR_COUNT && aggregation != AggrOp::AGGR_COUNT_ALL) {
+        result_cells[cell_idx].set_value(cell);
+        iter_time[cell_idx] ++;
+        continue;
+      }
+
+      switch (aggregation) {
         case AggrOp::AGGR_SUM:
-          res[0]=1;
-          rc=tuple->cell_at(cell_idx,cell);
-          attr_type =cell.attr_type();
-          if(attr_type ==AttrType::INTS or attr_type == AttrType::FLOATS){
-            result_cells[cell_idx].set_float(result_cells[cell_idx].get_float()+cell.get_float());
-          }break;
-
-
+          if (attr_type == AttrType::INTS || attr_type == AttrType::FLOATS) {
+            result_cells[cell_idx].set_float(result_cells[cell_idx].get_float() + cell.get_float());
+          }
+          break;
         case AggrOp::AGGR_MAX:
-          res[0]=1;
-          rc=tuple->cell_at(cell_idx,cell);
-          attr_type =cell.attr_type();
-          if(result_cells[cell_idx].attr_type()==AttrType::UNDEFINED){
-            if(attr_type==AttrType::CHARS){
-              result_cells[cell_idx].set_string(cell.get_string().c_str());
-              result_cells[cell_idx].set_type(AttrType::CHARS);
-            }
-            else if(attr_type ==AttrType::INTS or attr_type == AttrType::FLOATS){
-              result_cells[cell_idx].set_type(AttrType::FLOATS);
-              result_cells[cell_idx].set_float(cell.get_float());
-            }
-            else if(attr_type==AttrType::DATES){
-              result_cells[cell_idx].set_type(AttrType::DATES);
-              result_cells[cell_idx].set_date(cell.get_date());
+          if (attr_type == AttrType::INTS || attr_type == AttrType::FLOATS) {
+            result_cells[cell_idx].set_float(std::max(result_cells[cell_idx].get_float(), cell.get_float()));
+          } else if (attr_type == AttrType::DATES) {
+            result_cells[cell_idx].set_date(std::max(result_cells[cell_idx].get_int(), cell.get_int()));
+          } else if (attr_type == AttrType::CHARS) {
+            if (cell.get_string() > result_cells[cell_idx].get_string()){
+              result_cells[cell_idx].set_string(cell.get_string());
             }
           }
-          else if(result_cells[cell_idx].attr_type()==AttrType::INTS or result_cells[cell_idx].attr_type() == AttrType::FLOATS){
-            if(attr_type ==AttrType::INTS or attr_type == AttrType::FLOATS){
-            result_cells[cell_idx].set_float(max(result_cells[cell_idx].get_float(),cell.get_float()));
+          break;
+        case AggrOp::AGGR_MIN:
+          if (attr_type == AttrType::INTS || attr_type == AttrType::FLOATS) {
+            result_cells[cell_idx].set_float(std::min(result_cells[cell_idx].get_float(), cell.get_float()));
+          } else if (attr_type == AttrType::DATES) {
+            result_cells[cell_idx].set_date(std::min(result_cells[cell_idx].get_int(), cell.get_int()));
+          } else if (attr_type == AttrType::CHARS) {
+            if (cell.get_string() < result_cells[cell_idx].get_string()){
+              result_cells[cell_idx].set_string(cell.get_string());
             }
           }
-          else if(result_cells[cell_idx].attr_type()==AttrType::CHARS){
-            result_cells[cell_idx].set_string(result_cells[cell_idx].get_string() >cell.get_string()? result_cells[cell_idx].get_string() .c_str():cell.get_string().c_str());
+          break;
+        case AggrOp::AGGR_AVG:
+          if (attr_type == AttrType::INTS || attr_type == AttrType::FLOATS) {
+            float cells_sum = result_cells[cell_idx].get_float() * iter_time[cell_idx] + cell.get_float();
+            iter_time[cell_idx] ++;
+            result_cells[cell_idx].set_float(cells_sum / iter_time[cell_idx]);
           }
-          else if(result_cells[cell_idx].attr_type()==AttrType::DATES){
-            result_cells[cell_idx].set_date(max(result_cells[cell_idx].get_date(),cell.get_date()));
-          }break;
-        
-
-          case AggrOp::AGGR_MIN:
-          res[0]=1;
-          rc=tuple->cell_at(cell_idx,cell);
-          attr_type =cell.attr_type();
-          if(result_cells[cell_idx].attr_type()==AttrType::UNDEFINED){
-            if(attr_type==AttrType::CHARS){
-              result_cells[cell_idx].set_string(cell.get_string().c_str());
-              result_cells[cell_idx].set_type(AttrType::CHARS);
-            }
-            else if(attr_type ==AttrType::INTS or attr_type == AttrType::FLOATS){
-              result_cells[cell_idx].set_type(AttrType::FLOATS);
-              result_cells[cell_idx].set_float(cell.get_float());
-            }
-            else if(attr_type==AttrType::DATES){
-              result_cells[cell_idx].set_type(AttrType::DATES);
-              result_cells[cell_idx].set_date(cell.get_date());
-            }
-          }
-          else if(result_cells[cell_idx].attr_type()==AttrType::INTS or result_cells[cell_idx].attr_type() == AttrType::FLOATS){
-            if(attr_type ==AttrType::INTS or attr_type == AttrType::FLOATS){
-            result_cells[cell_idx].set_float(min(result_cells[cell_idx].get_float(),cell.get_float()));
-            }
-          }
-          else if(result_cells[cell_idx].attr_type()==AttrType::CHARS){
-            result_cells[cell_idx].set_string(result_cells[cell_idx].get_string() <cell.get_string()? result_cells[cell_idx].get_string() .c_str():cell.get_string().c_str());
-          }
-          else if(result_cells[cell_idx].attr_type()==AttrType::DATES){
-            result_cells[cell_idx].set_date(min(result_cells[cell_idx].get_date(),cell.get_date()));
-          }break;
-        
-        
-          case AggrOp::AGGR_AVG:
-          res[0]=1;
-          rc=tuple->cell_at(cell_idx,cell);
-          attr_type =cell.attr_type();
-          if(result_cells[cell_idx].attr_type()==AttrType::UNDEFINED){
-            if(attr_type ==AttrType::INTS or attr_type == AttrType::FLOATS){
-              result_cells[cell_idx].set_type(AttrType::FLOATS);
-              result_cells[cell_idx].set_float(cell.get_float());
-            }
-          }
-          else if(result_cells[cell_idx].attr_type()==AttrType::INTS or result_cells[cell_idx].attr_type() == AttrType::FLOATS){
-            if(attr_type ==AttrType::INTS or attr_type == AttrType::FLOATS){
-            result_cells[cell_idx].set_float((result_cells[cell_idx].get_float()*(curnum-1)+cell.get_float())/curnum);
-            }
-          }break;
-
-          case AggrOp::AGGR_COUNT:
-          res[0]=1;
-          rc=tuple->cell_at(cell_idx,cell);
-          attr_type =cell.attr_type();
-          if(result_cells[cell_idx].attr_type()==AttrType::UNDEFINED){
-              result_cells[cell_idx].set_type(AttrType::INTS);
-              result_cells[cell_idx].set_int(1);
-        
-          }
-          else{
-          result_cells[cell_idx].set_int(result_cells[cell_idx].get_int()+1);
-          }break;
-
-          case AggrOp::AGGR_COUNT_ALL:
-          res[0]=1;
-          rc=tuple->cell_at(cell_idx,cell);
-          attr_type =cell.attr_type();
-          if(result_cells[cell_idx].attr_type()==AttrType::UNDEFINED){
-              result_cells[cell_idx].set_type(AttrType::INTS);
-              result_cells[cell_idx].set_int(1);
-          }
-          else{
-          result_cells[cell_idx].set_int(result_cells[cell_idx].get_int()+1);
-          }break;
-          
+          break;
+        case AggrOp::AGGR_COUNT_ALL:
+        case AggrOp::AGGR_COUNT:
+          result_cells[cell_idx].set_int(result_cells[cell_idx].get_int() + 1);
+          break;
+        case AggrOp::AGGR_NONE:
+          break;
         default:
-          res[1]=1;
-
+          rc = RC::UNIMPLENMENT;
+          break;
       }
     }
   }
-  if(rc== RC::RECORD_EOF){
-    rc= RC::SUCCESS;
+
+  if (rc == RC::RECORD_EOF) {
+    rc = RC::SUCCESS;
   }
-  if(res[0]==1&&res[1]==1){
-    return RC::RECORD_EOF;
-  }
-  else{
-    
-    
+
   result_tuple_.set_cells(result_cells);
+
   return rc;
-  }
 }
 
 RC AggregatePhysicalOperator::close()
@@ -226,6 +130,6 @@ RC AggregatePhysicalOperator::close()
   return RC::SUCCESS;
 }
 
-Tuple *AggregatePhysicalOperator::current_tuple(){
-      return &result_tuple_;
+void AggregatePhysicalOperator::add_aggregation(const AggrOp aggregation){
+  aggregations_.push_back(aggregation);
 }

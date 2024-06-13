@@ -30,13 +30,24 @@ using namespace common;
 RC ParseStage::handle_request(SQLStageEvent *sql_event)
 {
   RC rc = RC::SUCCESS;
-
-  SqlResult         *sql_result = sql_event->session_event()->sql_result();
-  const std::string &sql        = sql_event->sql();
+  
+  SqlResult *sql_result = sql_event->session_event()->sql_result();
+  const std::string &sql = sql_event->sql();
 
   ParsedSqlResult parsed_sql_result;
 
-  parse(sql.c_str(), &parsed_sql_result);
+  try 
+  {
+    parse(sql.c_str(), &parsed_sql_result);
+  }
+  catch (const std::exception &e){
+    sql_result->set_return_code(RC::INVALID_ARGUMENT);
+    sql_result->set_state_string("");
+    RC rc = RC::INVALID_ARGUMENT;
+    return rc;
+  } 
+
+  
   if (parsed_sql_result.sql_nodes().empty()) {
     sql_result->set_return_code(RC::SUCCESS);
     sql_result->set_state_string("");

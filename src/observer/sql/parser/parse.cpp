@@ -12,11 +12,10 @@ See the Mulan PSL v2 for more details. */
 // Created by Meiyi
 //
 
+#include <mutex>
 #include "sql/parser/parse.h"
 #include "common/log/log.h"
 #include "sql/expr/expression.h"
-
-RC parse(char *st, ParsedSqlNode *sqln);
 
 CalcSqlNode::~CalcSqlNode()
 {
@@ -26,9 +25,11 @@ CalcSqlNode::~CalcSqlNode()
   expressions.clear();
 }
 
-ParsedSqlNode::ParsedSqlNode() : flag(SCF_ERROR) {}
+ParsedSqlNode::ParsedSqlNode() : flag(SCF_ERROR)
+{}
 
-ParsedSqlNode::ParsedSqlNode(SqlCommandFlag _flag) : flag(_flag) {}
+ParsedSqlNode::ParsedSqlNode(SqlCommandFlag _flag) : flag(_flag)
+{}
 
 void ParsedSqlResult::add_sql_node(std::unique_ptr<ParsedSqlNode> sql_node)
 {
